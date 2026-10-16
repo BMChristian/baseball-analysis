@@ -4,6 +4,7 @@
 library(tidyverse)
 library(Lahman)
 library(here)
+source(here("R", "batting_rates.R"))   # create your own function
 
 # Combine stints for players in the batting table -> a player traded mid season has one row per team 
 # Only looking at 2025 season -> Store the new table as 'Season', look only at 2025, group by the identifiers
@@ -43,4 +44,5 @@ obp_leaderboard <-
   select(nameFirst, nameLast, PA, AVG, OBP, SLG, OPS) |>
   mutate(across(AVG:OPS, \(x) round(x, 3))) |>
   arrange(desc(OBP))
+
 
