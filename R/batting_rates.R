@@ -18,3 +18,4 @@ batting_rates <- function(df) {
 }
 
 
+#na.rm = true -> this skips missing values, if there is a stat that wasnt recorded in older seasons

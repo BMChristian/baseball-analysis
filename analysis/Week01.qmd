@@ -1,0 +1,79 @@
+---
+title: "Week 1: Slash lines"
+format: html
+execute:
+  warning: false
+  message: false
+---
+Mutating the Batting table to add in calculated statistics that are not inherent to the original table. 
+```{r}
+season <- Batting |>
+  filter(yearID == 2025) |>
+  group_by(playerID, yearID) |>
+  summarise(across(c(AB, H, X2B, X3B, HR, BB, HBP, SF, SH, SO), sum),.groups = "drop")
+
+season <- season |>
+  mutate(
+    PA = AB + BB + HBP + SF + SH,
+    X1B = H - X2B - X3B - HR,
+    AVG = H / AB,
+    OBP = (H + BB + HBP) / (AB + BB + HBP + SF),
+    SLG = (X1B + 2 * X2B + 3 * X3B + 4 * HR) / AB,
+    OPS = OBP + SLG
+  ) |> 
+  filter(PA >= 300)
+```
+
+Aaron Judge leads both the OPS and OBP leaderboard for the 2025 season. Ohtani was second in OPS but dropped to 8th in OBP. Statistics were rounded to 3 dec and arranged in decending order by OPS/OBP.
+```{r}
+ops_leaderboard <- 
+  season |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, PA, AVG, OBP, SLG, OPS) |>
+  mutate(across(AVG:OPS, \(x) round(x, 3))) |>
+  arrange(desc(OPS))
+
+obp_leaderboard <- 
+  season |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, PA, AVG, OBP, SLG, OPS) |>
+  mutate(across(AVG:OPS, \(x) round(x, 3))) |>
+  arrange(desc(OBP))
+```
+
+Batting_rates function was used to store the mutation of the Batting table with the additional statistics. Barry bonds has the top 4 spots in the top 10 OPS from the 2000 season onward. Aaron judge is the only player in the statcast era to crack the top 10 from 2000-present. He also holds the top 3 spots in the 2015-present top 10 OPS listing.
+```{r}
+batting_rates <- function(df) {
+  df |>
+    group_by(playerID, yearID) |>
+    summarise(across(c(AB, H, X2B, X3B, HR, BB, HBP, SF, SH, SO), \(x) sum(x, na.rm = TRUE)),
+              .groups = "drop") |>
+    mutate(
+      PA  = AB + BB + HBP + SF + SH,
+      X1B = H - X2B - X3B - HR,
+      AVG = H / AB,
+      OBP = (H + BB + HBP) / (AB + BB + HBP + SF),
+      SLG = (X1B + 2 * X2B + 3 * X3B + 4 * HR) / AB,
+      OPS = OBP + SLG
+    )
+}
+source(here::here("R", "batting_rates.R"))
+
+Batting |> 
+  filter(yearID >= 2000) |>
+  batting_rates() |>
+  filter(PA >= 502) |>
+  slice_max(OPS, n = 10) |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, yearID, OBP, SLG, OPS)
+
+#Top during Statcast era
+Batting |>
+  filter(yearID >= 2015) |>
+  batting_rates() |>
+  filter(PA >= 502) |>
+  slice_max(OPS, n = 10) |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, yearID, OPS, SLG, OBP, PA)
+```
+

@@ -46,3 +46,30 @@ obp_leaderboard <-
   arrange(desc(OBP))
 
 
+# How the function is different than the earlier variable
+# Written out by hand (what you did)
+#season <- Batting |> filter(yearID == 2025) |> group_by(...) |> summarise(...) |> mutate(...) |> filter(PA >= 300)
+# Using the function
+#season <- Batting |> filter(yearID == 2025) |> batting_rates() |> filter(PA >= 300)
+
+
+
+#Batting Rates Function - Finding Top 10 OPS seasons since 2000. 502 PA is qualifying line (162 G x 3.1 PA)
+source(here::here("R", "batting_rates.R"))
+
+Batting |> 
+  filter(yearID >= 2000) |>
+  batting_rates() |>
+  filter(PA >= 502) |>
+  slice_max(OPS, n = 10) |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, yearID, OBP, SLG, OPS)
+
+#Top during Statcast era
+Batting |>
+  filter(yearID >= 2015) |>
+  batting_rates() |>
+  filter(PA >= 502) |>
+  slice_max(OPS, n = 10) |>
+  left_join(People |> select(playerID, nameFirst, nameLast), by = "playerID") |>
+  select(nameFirst, nameLast, yearID, OPS, SLG, OBP, PA)
